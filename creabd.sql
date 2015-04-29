@@ -146,11 +146,21 @@ delete from profesorconsulta where i.DNI <> &login;
 
 /*Triggers*//*Working On It*/
 
-create trigger ADD_EXAM
-after insert on Compuesta_Por
-for each row
+CREATE TRIGGER EDIT_EXAM
+AFTER INSERT OR DELETE ON Compuesta_Por
+FOR EACH ROW
 BEGIN
-update Pregunta set Num_Exams = Num_Exams+1 where Cod_pregunta = Cod_pregunta
+	IF INSERTING THEN
+		/*Código de sumar 1*/
+		IF new.Cod_Pregunta is not null
+			UPDATE Pregunta SET Num_Exams = Num_Exams+1 where Pregunta.Cod_Pregunta = new.Cod_Pregunta
+		END IF;
+	ELSIF DELETING THEN
+		/*Código de restar 1*/
+		IF old.Cod_Pregunta is not null
+			UPDATE Pregunta SET Num_Exams = Num_Exams-1 WHERE Pregunta.Cod_Pregunta = old.Cod_Pregunta
+		END IF;
+	END IF;
 END;
 /
 
