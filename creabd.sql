@@ -146,21 +146,31 @@ delete from profesorconsulta where i.DNI <> &login;
 
 /*Triggers*//*Working On It*/
 
-CREATE TRIGGER EDIT_EXAM
-AFTER INSERT OR DELETE ON Compuesta_Por
+CREATE TRIGGER ADD_EXAM
+AFTER INSERT ON Compuesta_por
 FOR EACH ROW
+WHEN (new.Cod_Pregunta is not null)
 BEGIN
-	IF INSERTING THEN
-		/*Código de sumar 1*/
-		IF new.Cod_Pregunta is not null
-			UPDATE Pregunta SET Num_Exams = Num_Exams+1 where Pregunta.Cod_Pregunta = new.Cod_Pregunta
-		END IF;
-	ELSIF DELETING THEN
-		/*Código de restar 1*/
-		IF old.Cod_Pregunta is not null
-			UPDATE Pregunta SET Num_Exams = Num_Exams-1 WHERE Pregunta.Cod_Pregunta = old.Cod_Pregunta
-		END IF;
-	END IF;
+UPDATE Pregunta SET Num_Exams=Num_Exams+1 WHERE Cod_Pregunta=:new.Cod_Pregunta;
+END;
+/
+
+CREATE TRIGGER RM_EXAM
+AFTER DELETE ON Compuesta_por
+FOR EACH ROW
+WHEN (old.Cod_Pregunta is not null)
+BEGIN
+UPDATE Pregunta SET Num_Exams=Num_Exams-1 WHERE Cod_Pregunta=:old.Cod_Pregunta;
+END;
+/
+
+CREATE TRIGGER UPD_EXAM
+AFTER UPDATE OF Cod_Pregunta ON Compuesta_por
+FOR EACH ROW
+WHEN(new.Cod_Pregunta is not null or old.Cod_Pregunta is not null)
+BEGIN
+UPDATE Pregunta SET Num_Exams=Num_Exams+1 WHERE Cod_Pregunta=:new.Cod_Pregunta;
+UPDATE Pregunta SET Num_Exams=Num_Exams-1 WHERE Cod_Pregunta=:old.Cod_Pregunta;
 END;
 /
 
