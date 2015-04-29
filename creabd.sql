@@ -1,24 +1,24 @@
 /*Lo primero que vamos a hacer es crear un usuario nuevo para la base de datos y así no trabajar directamente desde SYSTEM (esto es opcional)*/
-create user exams identified by examspassword default tablespace users temporary tablespace temp;
-grant connect, resource to exams;
+create user brogrammers identified by brogrammerspasswd default tablespace users temporary tablespace temp;
+grant connect, resource to brogrammers;
 
 /*Si utilizamos una base de datos ya existente, podemos consultar nuestras tablas
 para comprobar que no entran en conflicto con ninguna de las que ya podamos tener*/
-select owner, table_name from all_tables where owner='exams';
+select owner, table_name from all_tables where owner='brogrammers';
 
 /*O bien podemos asegurarnos de que no exista ninguna tabla con el nombre*/
-drop table Profesor;
-drop table Asignatura;
 drop table Imparte;
-drop table Tema;
-drop table Compuesta_por;
-drop table Titulacion;
+drop table Profesor;
+drop table Formada_por;
 drop table Forma_Parte;
-drop table Examen;
 drop table Examina;
-drop table Pregunta;
-drop table Evalua;
 drop table Compuesta_por;
+drop table Evalua;
+drop table Asignatura;
+drop table Tema;
+drop table Titulacion;
+drop table Examen;
+drop table Pregunta;
 drop table Opcion;
 
 /*Nota*/
@@ -101,8 +101,8 @@ create table Pregunta
 
 create table Evalua
 (
-	Cod_Pregunta INTEGER NOT NULL REFERENCES Pregunta,
 	Cod_Tema INTEGER NOT NULL REFERENCES Tema,
+	Cod_Pregunta INTEGER NOT NULL REFERENCES Pregunta,
 	PRIMARY KEY (Cod_Pregunta, Cod_Tema)
 );
 
@@ -118,8 +118,8 @@ create table Compuesta_Por
 
 create table Opcion
 (
-	Cod_Opción integer not null primary key, 
-	Cod_Pregunta integer not null references PREGUNTA, 
+	Cod_Pregunta integer not null references PREGUNTA,
+	Cod_Opción integer not null primary key,
 	Posicion_Num integer not null, 
 	Texto varchar(50) not null, 
 	Respuesta varchar(2)
@@ -129,24 +129,25 @@ create table Opcion
 /*Nota
 Al crear la vista nos daba un error de privilegios, los solucionamos con la siguiente sentencia:
 
-grant all privileges to konstantin identified by konstantin1994
+grant all privileges to brogrammers identified by brogrammerspasswd
 
 y podremos ver si los privilegios han sido aplicados correctamente con la
 siguiente sentencia
 
 select * from system_privilege_map;
 */
-
-define login = '11496939' /*Importante desdefinirlo! undefine login*/
-set verify off
+/*
+	DEBUG:
+	define login = '11496939'
+	set verify off
+*/
 drop view profesorconsulta;
-
 create view profesorconsulta as select count(e.Cod_Pregunta) as preguntas from Imparte i, Formada_por f, Evalua e where i.CODASIGNAT = f.cod_asign and f.cod_tema = e.cod_tema and i.DNI = &login;
 
-delete from profesorconsulta where i.DNI <> &login;
 
-/*Triggers*//*Working On It*/
+/*Triggers*/
 
+	/*Triger para Exámenes*/
 CREATE TRIGGER ADD_EXAM
 AFTER INSERT ON Compuesta_por
 FOR EACH ROW
@@ -172,6 +173,35 @@ WHEN(new.Cod_Pregunta is not null or old.Cod_Pregunta is not null)
 BEGIN
 UPDATE Pregunta SET Num_Exams=Num_Exams+1 WHERE Cod_Pregunta=:new.Cod_Pregunta;
 UPDATE Pregunta SET Num_Exams=Num_Exams-1 WHERE Cod_Pregunta=:old.Cod_Pregunta;
+END;
+/
+
+	/*Triger para Tema*/
+CREATE TRIGGER ADD_PREGUNTA
+AFTER INSERT ON Evalua
+FOR EACH ROW
+WHEN (new.Cod_Pregunta is not null)
+BEGIN
+UPDATE Tema SET Num_Preguntas=Num_Preguntas+1 WHERE Cod_Pregunta=:new.Cod_Pregunta;
+END;
+/
+
+CREATE TRIGGER RM_PREGUNTA
+AFTER DELETE ON Evalua
+FOR EACH ROW
+WHEN (old.Cod_Pregunta is not null)
+BEGIN
+UPDATE Tema SET Num_Preguntas=Num_Preguntas-1 WHERE Cod_Pregunta=:old.Cod_Pregunta;
+END;
+/
+
+CREATE TRIGGER UPD_PREGUNTA
+AFTER UPDATE OF Cod_Pregunta ON Evalua
+FOR EACH ROW
+WHEN(new.Cod_Pregunta is not null or old.Cod_Pregunta is not null)
+BEGIN
+UPDATE Tema SET Num_Preguntas=Num_Preguntas+1 WHERE Cod_Pregunta=:new.Cod_Pregunta;
+UPDATE Tema SET Num_Preguntas=Num_Preguntas-1 WHERE Cod_Pregunta=:old.Cod_Pregunta;
 END;
 /
 
