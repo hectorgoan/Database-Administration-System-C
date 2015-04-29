@@ -53,7 +53,8 @@ create table Tema
 	Cod_Tema integer not null primary key, 
 	Posicion_Num integer not null, 
 	Titulo varchar(50) not null, 
-	Descr varchar(250) not null
+	Descr varchar(250) not null,
+	Num_Preguntas INTEGER NOT NULL /*Este es atributo derivado*/ 
 );
 
 create table Formada_por
@@ -95,7 +96,7 @@ create table Pregunta
 (
 	Cod_Pregunta INTEGER NOT NULL PRIMARY KEY,
 	Enunciado VARCHAR (200) NOT NULL,
-	Num_Exams INTEGER NOT NULL /*Este es el atributo derivado*/ 
+	Num_Exams INTEGER NOT NULL /*Este es atributo derivado*/ 
 );
 
 create table Evalua
