@@ -2,6 +2,17 @@
 create user brogrammers identified by brogrammerspasswd default tablespace users temporary tablespace temp;
 grant connect, resource to brogrammers;
 
+/*
+	Nota
+	Al crear la vista nos daba un error de privilegios, los solucionamos con la siguiente sentencia:
+*/
+grant all privileges to brogrammers identified by brogrammerspasswd;
+/*
+	y podremos ver si los privilegios han sido aplicados correctamente con la
+	siguiente sentencia
+*/
+select * from system_privilege_map;
+
 /*Si utilizamos una base de datos ya existente, podemos consultar nuestras tablas
 para comprobar que no entran en conflicto con ninguna de las que ya podamos tener*/
 select owner, table_name from all_tables where owner='brogrammers';
@@ -27,6 +38,8 @@ Hemos optado por utilizar una mezcla entre la solución propuesta en Studium y l
 */
 
 /*Código de creación de la Base de Datos*/
+
+set autocommit on; /*Para guardar cambios*/
 
 create table Profesor
 (
@@ -125,26 +138,6 @@ create table Opcion
 	Respuesta varchar(2)
 );
 
-/*Vista*/
-/*Nota
-Al crear la vista nos daba un error de privilegios, los solucionamos con la siguiente sentencia:
-
-grant all privileges to brogrammers identified by brogrammerspasswd
-
-y podremos ver si los privilegios han sido aplicados correctamente con la
-siguiente sentencia
-
-select * from system_privilege_map;
-*/
-/*
-	DEBUG:
-	define login = '11496939'
-	set verify off
-*/
-drop view profesorconsulta;
-create view profesorconsulta as select count(e.Cod_Pregunta) as preguntas from Imparte i, Formada_por f, Evalua e where i.CODASIGNAT = f.cod_asign and f.cod_tema = e.cod_tema and i.DNI = &login;
-
-
 /*Triggers*/
 
 	/*Triger para Exámenes*/
@@ -180,28 +173,28 @@ END;
 CREATE TRIGGER ADD_PREGUNTA
 AFTER INSERT ON Evalua
 FOR EACH ROW
-WHEN (new.Cod_Pregunta is not null)
+WHEN (new.Cod_Tema is not null)
 BEGIN
-UPDATE Tema SET Num_Preguntas=Num_Preguntas+1 WHERE Cod_Pregunta=:new.Cod_Pregunta;
+UPDATE Tema SET Num_Preguntas=Num_Preguntas+1 WHERE Cod_Tema=:new.Cod_Tema;
 END;
 /
 
 CREATE TRIGGER RM_PREGUNTA
 AFTER DELETE ON Evalua
 FOR EACH ROW
-WHEN (old.Cod_Pregunta is not null)
+WHEN (old.Cod_Tema is not null)
 BEGIN
-UPDATE Tema SET Num_Preguntas=Num_Preguntas-1 WHERE Cod_Pregunta=:old.Cod_Pregunta;
+UPDATE Tema SET Num_Preguntas=Num_Preguntas-1 WHERE Cod_Tema=:old.Cod_Tema;
 END;
 /
 
 CREATE TRIGGER UPD_PREGUNTA
 AFTER UPDATE OF Cod_Pregunta ON Evalua
 FOR EACH ROW
-WHEN(new.Cod_Pregunta is not null or old.Cod_Pregunta is not null)
+WHEN(new.Cod_Tema is not null or old.Cod_Tema is not null)
 BEGIN
-UPDATE Tema SET Num_Preguntas=Num_Preguntas+1 WHERE Cod_Pregunta=:new.Cod_Pregunta;
-UPDATE Tema SET Num_Preguntas=Num_Preguntas-1 WHERE Cod_Pregunta=:old.Cod_Pregunta;
+UPDATE Tema SET Num_Preguntas=Num_Preguntas+1 WHERE Cod_Tema=:new.Cod_Tema;
+UPDATE Tema SET Num_Preguntas=Num_Preguntas-1 WHERE Cod_Tema=:old.Cod_Tema;
 END;
 /
 
