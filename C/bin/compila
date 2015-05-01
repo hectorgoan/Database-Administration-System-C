@@ -1,0 +1,1 @@
+gmake -f $HOME/bin/makefile build EXE=$1 OBJS=$1.o

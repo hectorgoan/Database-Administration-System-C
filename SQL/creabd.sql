@@ -39,7 +39,7 @@ Hemos optado por utilizar una mezcla entre la solución propuesta en Studium y l
 
 /*Código de creación de la Base de Datos*/
 
-set autocommit on; /*Para guardar cambios*/
+/* set autocommit on; Para guardar cambios automáticamente*/
 
 create table Profesor
 (
@@ -110,7 +110,7 @@ create table Pregunta
 	Cod_Pregunta INTEGER NOT NULL PRIMARY KEY,
 	Enunciado VARCHAR (200) NOT NULL,
 	Num_Exams INTEGER NOT NULL /*Este es atributo derivado*/ 
-);
+); 
 
 create table Evalua
 (
@@ -132,7 +132,7 @@ create table Compuesta_Por
 create table Opcion
 (
 	Cod_Pregunta integer not null references PREGUNTA,
-	Cod_Opción integer not null primary key,
+	Cod_Opcion integer not null primary key,
 	Posicion_Num integer not null, 
 	Texto varchar(50) not null, 
 	Respuesta varchar(2)
@@ -212,5 +212,5 @@ grant all on  Evalua to public;
 grant all on  Compuesta_por to public;
 grant all on  Opcion to public;
 
-
+commit;
 
