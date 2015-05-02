@@ -10,6 +10,7 @@ int main(void)
 	//Zona de declaración de variables
 		//Variables para C
 		int opcion;
+		char enunciado[201];
 
 		//Variables para SQL
 		EXEC SQL BEGIN DECLARE SECTION;
@@ -83,6 +84,18 @@ int main(void)
 		case 2:
 			//Código para la segunda funcionalidad
 			printf("Código para la segunda funcionalidad \n");
+			printf("\n");
+			printf("Para dar de alta una nueva pregunta se necesita el enunciado\n");
+			printf("Puedes introducirlo a continuación:\n");
+			scanf("%s", enunciado);
+
+			/*
+				Consulta para hallar el max
+			*/
+			/*
+				Consulta de insertar
+			*/
+
 			break;
 		case 3:
 			//Código para la tercera funcionalidad
