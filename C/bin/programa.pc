@@ -1,5 +1,11 @@
 #include <stdio.h>
+#include <string.h>
 EXEC SQL INCLUDE SQLCA;
+
+#define OK       0
+#define NO_INPUT 1
+#define TOO_LONG 2
+static int getLine (char *prmpt, char *buff, size_t sz);
 
 int main(void)
 {
@@ -9,25 +15,119 @@ int main(void)
 	
 	//Zona de declaración de variables
 		//Variables para C
-		int opcion;
-		char enunciado[201];
+		int option;
+		char enunciado[200];
+		int maximo1;
 
+		int rc;
+    	char buff[10];
+		
 		//Variables para SQL
 		EXEC SQL BEGIN DECLARE SECTION;
+		
+		//Primero los structs de las tablas
+		struct profesor_
+		{
+			VARCHAR dni[10];
+			VARCHAR nombre[50];
+			VARCHAR area[50];			
+		}profesor;
+		
+		struct asignatura_
+		{
+			int codigo;
+			VARCHAR nombre[50];
+		}asignatura;
+
+		struct imparte_
+		{
+			VARCHAR dni[10];
+			int codasignat;
+		}imparte;
+		
+		struct tema_
+		{
+			int cod_tema;
+			int posicion_num;
+			VARCHAR titulo[50];
+			VARCHAR descr[250];
+			int num_preguntas;
+		}tema;
+
+		struct formada_por_
+		{
+			int cod_asign;
+			int cod_tema;	
+		}formada_por;
+
+		struct titulacion_
+		{
+			int cod_titulacion;
+			VARCHAR nombre[50];
+			int creditos;
+		}titulacion;
+
+		struct forma_parte_
+		{
+			int cod_titulacion;
+			int cod_asign;			
+		}forma_parte;
+
+		struct examen_
+		{
+			int cod_examen;
+			int convocatoria;
+		}examen, examen2;
+
+		struct examina_
+		{
+			int cod_examen;
+			int cod_asignatura;
+			int cod_tema;
+		}examina;
+
 		struct pregunta_
 		{
 			int cod_pregunta;
-			char enunciado[20]; //En verdad son 201 lo que hay que poner, pero queda muy largo en el print
+			VARCHAR enunciado[200]; //En verdad son 201 lo que hay que poner, pero queda muy largo en el print
 			int num_exams;
-		} pregunta;
+		} pregunta, pregunta2;
+
+		struct evalua_
+		{
+			int cod_tema;
+			int cod_pregunta;
+		}evalua;
+
+		struct compuesta_por_
+		{
+			int cod_examen;
+			int cod_pregunta;
+			int num_correctas;
+			int num_incorrectas;
+			int num_nsnc;			
+		}compuesta_por, compuesta_por2;
+
+		struct opcion_
+		{
+			int cod_pregunta;
+			int cod_opcion;
+			int posicion_num;
+			VARCHAR texto[50];
+			VARCHAR respuesta[2];
+		}opcion, opcion2;
+
+		//Otras variables para SQL
+		char enunciadoSQL[201];
+		int MAXIMUM;
+		int MAXIMUM2;
+		int CODIGOCONSULTA;
 
 		char oracleid[]="/";
 		EXEC SQL END DECLARE SECTION;
 
 		//Cursores para SQL
-		EXEC SQL DECLARE micursor CURSOR FOR select * from Pregunta;
-
-
+		EXEC SQL DECLARE micursor CURSOR FOR select p.Cod_Pregunta, t.Titulo, a.Nombre from Pregunta p, Tema t, Asignatura a, Formada_Por fp,  Evalua e where p.Cod_Pregunta = e.Cod_Pregunta and t.Cod_Tema = e.Cod_Tema and t.Cod_Tema = fp.Cod_Tema and a.Codigo = fp.Cod_Asign;;
 
 
 	//Cuerpo de programa
@@ -48,62 +148,193 @@ int main(void)
 	printf("	-Funcionalidad extra-\n");
 	printf("	5 -> Listar los datos de los temas en la base de datos.\n");
 	printf("	6 -> Dar de alta un nuevo tema.\n");
+	printf("	7 -> Consultar diccionario de datos.\n");
 	printf("\n");
 
-	while(opcion!=1 && opcion!=2 && opcion!=3 && opcion!=4 && opcion!=5 && opcion!=6)
+	while(option!=1 && option!=2 && option!=3 && option!=4 && option!=5 && option!=6)
 	{
 		printf("Introduce una opción válida: \n");
-		scanf("%d", &opcion);
+		scanf("%d", &option); //Solucionar lo de petar si es una letra
 	}
-	switch (opcion)
+	switch (option)
 	{
-		case 1:
+		case 1: //FINISHED
+			//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 			//Código para la primera funcionalidad
-			printf("Código para la primera funcionalidad \n");
+			printf("\n");
+			printf("Listado de las preguntas en la base de datos: \n");
 			
 			EXEC SQL CONNECT :oracleid;
+			if (sqlca.sqlcode != 0) //Conexión fallida
+			{
+				printf("Error, conexión fallida\n");
+				printf("Códigos de error de SQL: \n");
+				printf("%d\n", sqlca.sqlcode);
+				printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+				printf("Código de error -98\n");
+				printf("Saliendo del programa.\n");
+				return -98;
+			}
 			EXEC SQL OPEN micursor;
-			//printf ("CONEXION: %d, %s\n", sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc); //Info de la conexión
+
 			EXEC SQL FETCH micursor
-			INTO :pregunta;
+			INTO :pregunta.cod_pregunta, :tema.titulo, :asignatura.nombre;
 			while (sqlca.sqlcode == 0)
 			{
 				printf("\n");
-				printf("Codigo = %d 	\n", pregunta.cod_pregunta);
-				printf("Enunciado = %s 	\n", pregunta.enunciado);
-				printf("Num_Exams = %d 	\n", pregunta.num_exams );
+				printf("Pregunta = %d 	\n", pregunta.cod_pregunta);
+				printf("Tema = %.*s 	\n", tema.titulo.len, tema.titulo.arr);
+				printf("Asignatura = %.*s 	\n", asignatura.nombre.len, asignatura.nombre.arr);
+
 				printf("\n");
 
 				EXEC SQL FETCH micursor
-				INTO :pregunta;
+				INTO :pregunta.cod_pregunta, :tema.titulo, :asignatura.nombre;
 			}
 			EXEC SQL CLOSE micursor;
 			EXEC SQL COMMIT WORK RELEASE;
-			
+			//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 			break;
-		case 2:
+		case 2: //90%
+			//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+			fseek(stdin,0,SEEK_END); //Limpieza del buffer
 			//Código para la segunda funcionalidad
 			printf("Código para la segunda funcionalidad \n");
 			printf("\n");
+			
 			printf("Para dar de alta una nueva pregunta se necesita el enunciado\n");
 			printf("Puedes introducirlo a continuación:\n");
-			scanf("%s", enunciado);
+			
+				rc = getLine ("Enter string> ", enunciadoSQL, sizeof(enunciadoSQL));
+    
+    			if (rc == NO_INPUT) 
+    			{
+        			printf("No se ha introducido ningún enunciado.\n");
+        			printf("Saliendo del programa.\n");
+        			printf("Código del fallo: -1\n");
+        			return -1;
+    			}
 
-			/*
-				Consulta para hallar el max
-			*/
-			/*
-				Consulta de insertar
-			*/
+    			if (rc == TOO_LONG) 
+    			{
+    				printf("El enunciado es demasiado largo,\n");
+        			printf ("Solo se mantendría: [%s]\n", enunciadoSQL);
+        			printf("Saliendo del programa.\n");
+        			printf("Código del fallo -2\n");
+        			return -2;
+    			}
 
+    			if (strlen(enunciadoSQL)<1)
+    			{
+    				printf("No hay enunciado\n");
+    				printf("Saliendo del programa.\n");
+    				printf("Código de fallo: -3\n");
+    				return -3;
+    			}
+    			
+
+    		printf ("OK [%s]\n", enunciadoSQL);
+
+			//Consulta para hallar el max
+			fseek(stdin,0,SEEK_END); //Limpieza del buffer
+				EXEC SQL CONNECT :oracleid;
+				if (sqlca.sqlcode != 0) //Conexión fallida
+				{
+					printf("Error, conexión fallida\n");
+					printf("Códigos de error de SQL: \n");
+					printf("%d\n", sqlca.sqlcode);
+					printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+					printf("Código de error -98\n");
+					printf("Saliendo del programa.\n");
+					return -98;
+				}
+				EXEC SQL select max(Cod_Pregunta) into :MAXIMUM2 from pregunta;
+				printf("%d\n", MAXIMUM2);
+				EXEC SQL COMMIT WORK RELEASE;
+			/*Consulta para hallar el max e insertar
+			
+			EXEC SQL insert into pregunta values (:MAXIMUM+1, :enunciadoSQL, 0);
+			printf("Inserción realizada con éxito\n");
+			*/
+			//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 			break;
-		case 3:
+		case 3://FALTA LA CONSULTA
+			//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 			//Código para la tercera funcionalidad
-			printf("Código para la tercera funcionalidad \n");
+			fseek(stdin,0,SEEK_END); //Limpieza del buffer
+			printf("Consultar una pregunta a partir de su código: \n");
+			printf("Elige un código del 1 al ");
+			CODIGOCONSULTA = -1;
+			//Consulta para hallar el max
+				EXEC SQL CONNECT :oracleid;
+				if (sqlca.sqlcode != 0) //Conexión fallida
+				{
+					printf("Error, conexión fallida\n");
+					printf("Códigos de error de SQL: \n");
+					printf("%d\n", sqlca.sqlcode);
+					printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+					printf("Código de error -98\n");
+					printf("Saliendo del programa.\n");
+					return -98;
+				}
+				EXEC SQL select max(Cod_Pregunta) into :MAXIMUM from pregunta;
+				printf("%d\n", MAXIMUM);
+				EXEC SQL COMMIT WORK RELEASE;
+			
+			do
+			{
+				scanf("%d", &CODIGOCONSULTA);
+				//printf("%d\n", CODIGOCONSULTA);
+			}while(CODIGOCONSULTA > MAXIMUM);
+			//Consulta para la consulta (valga la redundancia)
+
+
+				printf("%d\n", CODIGOCONSULTA);
+				EXEC SQL DECLARE cursormi CURSOR FOR 
+				select p.enunciado, o.Texto, o.Respuesta, e.Cod_Examen 
+				from Pregunta p, Opcion o, Compuesta_Por cp, Examen e 
+				where p.Cod_Pregunta = :CODIGOCONSULTA and p.Cod_Pregunta = cp.Cod_Pregunta and p.Cod_Pregunta = o.Cod_Pregunta and e.Cod_Examen = cp.Cod_Examen;
+
+				EXEC SQL CONNECT :oracleid;
+				EXEC SQL OPEN cursormi;
+
+				EXEC SQL FETCH cursormi
+				INTO :pregunta2.enunciado, :opcion2.texto, :opcion2.respuesta, :examen2.cod_examen;
+				while (sqlca.sqlcode == 0)
+				{
+					printf("\n");
+					printf("Pregunta = %d 	\n", pregunta.cod_pregunta);
+					printf("Tema = %.*s 	\n", tema.titulo.len, tema.titulo.arr);
+					printf("Asignatura = %.*s 	\n", asignatura.nombre.len, asignatura.nombre.arr);
+
+					printf("\n");
+
+					EXEC SQL FETCH cursormi
+				INTO :pregunta2.enunciado, :opcion2.texto, :opcion2.respuesta, :examen2.cod_examen;
+				}
+				EXEC SQL CLOSE cursormi;
+				EXEC SQL COMMIT WORK RELEASE;
+
+
+				/*
+
+				EXEC SQL CONNECT :oracleid;
+
+				EXEC SQL select * into pregunta2 from Pregunta where cod_pregunta = :CODIGOCONSULTA;
+				EXEC SQL select * into opcion2 from Opcion where cod_pregunta = :CODIGOCONSULTA;
+				EXEC SQL select * into compuesta_por2 from Compuesta_Por where cod_pregunta = :CODIGOCONSULTA;
+
+				
+				printf("\n");
+				printf("Pregunta = %d 	\n", pregunta2.cod_pregunta);
+				printf("Opcion = %d \n", opcion2.cod_pregunta);
+				printf("CP = %d \n", compuesta_por2.cod_pregunta);
+
+				EXEC SQL COMMIT WORK RELEASE;*/
+										
 			break;
 		case 4:
 			//Código para la primera funcionalidad
-			printf("Código para la cuarta funcionalidad \n");
 			break;
 		case 5:
 			//Código para la segunda funcionalidad
@@ -113,8 +344,45 @@ int main(void)
 			//Código para la tercera funcionalidad
 			printf("Código para la sexta funcionalidad \n");
 			break;
+		case 7:
+			printf("Diccionario de fallos\n");
+			printf("	-1 = Enunciado no introducido\n");
+			printf("    -2 = Enunciado demasiado largo\n");
+			printf("	-3 = Enunciado vacío\n");
+			printf("\n");
+			printf("	-98 = Error de conexión SQL\n");
+			printf("	-99 = Opción elegida no válida\n");
+			break;
 		default:
-			return(-1);
+			printf("Código de fallo: -99\n");
+			printf("La opción introducida no es válida\n");
+			return(-99);
 	}
 	return 0;
+}
+
+static int getLine (char *prmpt, char *buff, size_t sz) 
+{
+    int ch, extra;
+
+    // Get line with buffer overrun protection.
+    if (prmpt != NULL) {
+        printf ("%s", prmpt);
+        fflush (stdout);
+    }
+    if (fgets (buff, sz, stdin) == NULL)
+        return NO_INPUT;
+
+    // If it was too long, there'll be no newline. In that case, we flush
+    // to end of line so that excess doesn't affect the next call.
+    if (buff[strlen(buff)-1] != '\n') {
+        extra = 0;
+        while (((ch = getchar()) != '\n') && (ch != EOF))
+            extra = 1;
+        return (extra == 1) ? TOO_LONG : OK;
+    }
+
+    // Otherwise remove newline and give string back to caller.
+    buff[strlen(buff)-1] = '\0';
+    return OK;
 }
