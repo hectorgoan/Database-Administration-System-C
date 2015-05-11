@@ -119,16 +119,20 @@ int main(void)
 
 		//Otras variables para SQL
 		char enunciadoSQL[201];
+		char tituloSQL[51];
+		char descrSQL[251];
 		int MAXIMUM;
 		int MAXIMUM2;
+		int MAXIMUM3;
 		int CODIGOCONSULTA;
+		int POSICION;
 
 		char oracleid[]="/";
 		EXEC SQL END DECLARE SECTION;
 
 		//Cursores para SQL
 		EXEC SQL DECLARE micursor CURSOR FOR select p.Cod_Pregunta, t.Titulo, a.Nombre from Pregunta p, Tema t, Asignatura a, Formada_Por fp,  Evalua e where p.Cod_Pregunta = e.Cod_Pregunta and t.Cod_Tema = e.Cod_Tema and t.Cod_Tema = fp.Cod_Tema and a.Codigo = fp.Cod_Asign;;
-
+		EXEC SQL DECLARE jejecursor CURSOR FOR select * from Tema;
 
 	//Cuerpo de programa
  	printf("----------------------------------\n");
@@ -148,22 +152,22 @@ int main(void)
 	printf("	-Funcionalidad extra-\n");
 	printf("	5 -> Listar los datos de los temas en la base de datos.\n");
 	printf("	6 -> Dar de alta un nuevo tema.\n");
+	printf("	-Ayuda-\n");
 	printf("	7 -> Consultar diccionario de datos.\n");
 	printf("\n");
 
 	while(option!=1 && option!=2 && option!=3 && option!=4 && option!=5 && option!=6)
 	{
+		fseek(stdin,0,SEEK_END); //Limpieza del buffer
 		printf("Introduce una opción válida: \n");
-		scanf("%d", &option); //Solucionar lo de petar si es una letra
+		scanf("%d", &option);
 	}
 	switch (option)
 	{
-		case 1: //FINISHED
-			//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-			//Código para la primera funcionalidad
+		case 1: //FINISHED & CLEANED
 			printf("\n");
-			printf("Listado de las preguntas en la base de datos: \n");
-			
+			printf("-LISTAR LAS PREGUNTAS DE LA BASE DE DATOS-\n");
+			printf("\n");
 			EXEC SQL CONNECT :oracleid;
 			if (sqlca.sqlcode != 0) //Conexión fallida
 			{
@@ -193,19 +197,18 @@ int main(void)
 			}
 			EXEC SQL CLOSE micursor;
 			EXEC SQL COMMIT WORK RELEASE;
-			//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 			break;
-		case 2: //90%
-			//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+		case 2: //FINISHED & CLEANED
 			fseek(stdin,0,SEEK_END); //Limpieza del buffer
-			//Código para la segunda funcionalidad
-			printf("Código para la segunda funcionalidad \n");
+			
+			printf("\n");
+			printf("-DAR DE ALTA UNA NUEVA PREGUNTA- \n");
 			printf("\n");
 			
 			printf("Para dar de alta una nueva pregunta se necesita el enunciado\n");
 			printf("Puedes introducirlo a continuación:\n");
 			
-				rc = getLine ("Enter string> ", enunciadoSQL, sizeof(enunciadoSQL));
+				rc = getLine ("Enunciado: ", enunciadoSQL, sizeof(enunciadoSQL));
     
     			if (rc == NO_INPUT) 
     			{
@@ -249,13 +252,15 @@ int main(void)
 					return -98;
 				}
 				EXEC SQL select max(Cod_Pregunta) into :MAXIMUM2 from pregunta;
-				printf("%d\n", MAXIMUM2);
+				
+
+				EXEC SQL insert into pregunta values (:MAXIMUM2+1, :enunciadoSQL, 0);
+				printf("Inserción realizada con éxito\n");
+				printf("ID de la pregunta insertada: %d\n", MAXIMUM2+1);
+
 				EXEC SQL COMMIT WORK RELEASE;
-			/*Consulta para hallar el max e insertar
 			
-			EXEC SQL insert into pregunta values (:MAXIMUM+1, :enunciadoSQL, 0);
-			printf("Inserción realizada con éxito\n");
-			*/
+			
 			//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 			break;
 		case 3://FALTA LA CONSULTA
@@ -336,13 +341,137 @@ int main(void)
 		case 4:
 			//Código para la primera funcionalidad
 			break;
-		case 5:
-			//Código para la segunda funcionalidad
-			printf("Código para la quinta funcionalidad \n");
+		case 5://FINISHED (AUNQUE MODIFICANDO LA CONSULTA PODEMOS OBTENER MAS DATOS)
+			printf("\n");
+			printf("-LISTADO DE LOS TEMAS EN LA BASE DE DATOS- \n");
+			printf("\n");
+			
+			EXEC SQL CONNECT :oracleid;
+			if (sqlca.sqlcode != 0) //Conexión fallida
+			{
+				printf("Error, conexión fallida\n");
+				printf("Códigos de error de SQL: \n");
+				printf("%d\n", sqlca.sqlcode);
+				printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+				printf("Código de error -98\n");
+				printf("Saliendo del programa.\n");
+				return -98;
+			}
+			EXEC SQL OPEN jejecursor;
+
+			EXEC SQL FETCH jejecursor
+			INTO :tema;
+			while (sqlca.sqlcode == 0)
+			{
+				printf("\n");
+				printf("Tema:\n");
+				printf("Código = %d 	\n", tema.cod_tema);
+				printf("Posición = %d 	\n", tema.posicion_num);
+				printf("Título = %.*s 	\n", tema.titulo.len, tema.titulo.arr);
+				printf("Descripción = %.*s 	\n", tema.descr.len, tema.descr.arr);
+				printf("Número de preguntas = %d 	\n", tema.num_preguntas);
+				printf("\n");
+
+				EXEC SQL FETCH jejecursor
+				INTO :tema;
+			}
+			EXEC SQL CLOSE jejecursor;
+			EXEC SQL COMMIT WORK RELEASE;
 			break;
-		case 6:
-			//Código para la tercera funcionalidad
-			printf("Código para la sexta funcionalidad \n");
+		case 6://FINISHED & CLEANED
+			fseek(stdin,0,SEEK_END); //Limpieza del buffer
+			
+			printf("\n");
+			printf("-DAR DE ALTA UN NUEVO TEMA- \n");
+			printf("\n");
+			
+			printf("Para dar de alta un nuevo tema se necesita el título, la descipción y su posición\n");
+			printf("Se solicitarán los datos a continuación:\n");
+			
+				rc = getLine ("Título (max 50): ", tituloSQL, sizeof(tituloSQL));
+    
+    			if (rc == NO_INPUT) 
+    			{
+        			printf("No se ha introducido ningún título.\n");
+        			printf("Saliendo del programa.\n");
+        			printf("Código del fallo: -1\n");
+        			return -1;
+    			}
+
+    			if (rc == TOO_LONG) 
+    			{
+    				printf("El título es demasiado largo,\n");
+        			printf ("Solo se mantendría: [%s]\n", tituloSQL);
+        			printf("Saliendo del programa.\n");
+        			printf("Código del fallo -2\n");
+        			return -2;
+    			}
+
+    			if (strlen(tituloSQL)<1)
+    			{
+    				printf("No hay título\n");
+    				printf("Saliendo del programa.\n");
+    				printf("Código de fallo: -3\n");
+    				return -3;
+    			}
+
+    			rc = getLine ("Descripción (max 250): ", descrSQL, sizeof(descrSQL));
+    
+    			if (rc == NO_INPUT) 
+    			{
+        			printf("No se ha introducido ningún título.\n");
+        			printf("Saliendo del programa.\n");
+        			printf("Código del fallo: -1\n");
+        			return -1;
+    			}
+
+    			if (rc == TOO_LONG) 
+    			{
+    				printf("El título es demasiado largo,\n");
+        			printf ("Solo se mantendría: [%s]\n", descrSQL);
+        			printf("Saliendo del programa.\n");
+        			printf("Código del fallo -2\n");
+        			return -2;
+    			}
+
+    			if (strlen(descrSQL)<1)
+    			{
+    				printf("No hay título\n");
+    				printf("Saliendo del programa.\n");
+    				printf("Código de fallo: -3\n");
+    				return -3;
+    			}
+
+    			printf("Posición: ");
+    			scanf("%d", &POSICION);
+    			
+
+    		printf("Título introducido: %s\n", tituloSQL);
+    		printf("Descripción introducida:%s\n", descrSQL);
+    		printf("Posición introducida: %d\n", POSICION);
+
+    		
+			//Consulta para hallar el max e insertar
+				fseek(stdin,0,SEEK_END); //Limpieza del buffer
+				EXEC SQL CONNECT :oracleid;
+				if (sqlca.sqlcode != 0) //Conexión fallida
+				{
+					printf("Error, conexión fallida\n");
+					printf("Códigos de error de SQL: \n");
+					printf("%d\n", sqlca.sqlcode);
+					printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+					printf("Código de error -98\n");
+					printf("Saliendo del programa.\n");
+					return -98;
+				}
+				EXEC SQL select max(Cod_Tema) into :MAXIMUM3 from tema;
+				
+				EXEC SQL insert into tema values (:MAXIMUM3+1, :POSICION, :enunciadoSQL, :descrSQL, 0);
+				printf("Inserción realizada con éxito\n");
+				printf("ID del tema insertado: %d\n", MAXIMUM3+1);
+
+				EXEC SQL COMMIT WORK RELEASE;
+			
 			break;
 		case 7:
 			printf("Diccionario de fallos\n");
