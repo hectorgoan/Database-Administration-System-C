@@ -144,6 +144,8 @@ int main(void)
 
 
 
+
+
 	//Cuerpo de programa
  	printf("----------------------------------\n");
 	printf("          Welcome to the:         \n");
@@ -272,10 +274,12 @@ int main(void)
 			
 			
 			break;
-		case 3://FALTA LA CONSULTA
+		case 3://FINISHED & CLEAN
 			fseek(stdin,0,SEEK_END); //Limpieza del buffer
-			printf("Consultar una pregunta a partir de su código: \n");
-			printf("Elige un código del 1 al ");
+			printf("\n");
+			printf("-MOSTRAR TODOS LOS DATOS DE UNA PREGUNTA A PARTIR DE SU CÓDIGO- \n");
+			printf("\n");
+			
 			CODIGOCONSULTA = -1;
 			//Consulta para hallar el max
 				EXEC SQL CONNECT :oracleid;
@@ -290,59 +294,130 @@ int main(void)
 					return -98;
 				}
 				EXEC SQL select max(Cod_Pregunta) into :MAXIMUM from pregunta;
-				printf("%d\n", MAXIMUM);
+				
 				EXEC SQL COMMIT WORK RELEASE;
-			
 			do
 			{
+				printf("Elige un código del 1 al ");
+				printf("%d\n", MAXIMUM);
 				scanf("%d", &CODIGOCONSULTA);
 			}while(CODIGOCONSULTA > MAXIMUM);
-			//Consulta para la consulta (valga la redundancia)
-
-
-				printf("%d\n", CODIGOCONSULTA);
-				EXEC SQL DECLARE cursormi CURSOR FOR 
-				select p.enunciado, o.Texto, o.Respuesta, e.Cod_Examen 
-				from Pregunta p, Opcion o, Compuesta_Por cp, Examen e 
-				where p.Cod_Pregunta = :CODIGOCONSULTA and p.Cod_Pregunta = cp.Cod_Pregunta and p.Cod_Pregunta = o.Cod_Pregunta and e.Cod_Examen = cp.Cod_Examen;
-
+			
+			//Obtener todo lo de pregunta
 				EXEC SQL CONNECT :oracleid;
-				EXEC SQL OPEN cursormi;
+				if (sqlca.sqlcode != 0) //Conexión fallida
+				{
+					printf("Error, conexión fallida\n");
+					printf("Códigos de error de SQL: \n");
+					printf("%d\n", sqlca.sqlcode);
+					printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+					printf("Código de error -98\n");
+					printf("Saliendo del programa.\n");
+					return -98;
+				}
+				EXEC SQL select * into :pregunta from pregunta where cod_pregunta = :CODIGOCONSULTA;
+				EXEC SQL COMMIT WORK RELEASE;
 
-				EXEC SQL FETCH cursormi
-				INTO :pregunta2.enunciado, :opcion2.texto, :opcion2.respuesta, :examen2.cod_examen;
+				printf("\n");
+				printf("Pregunta seleccionada:\n");
+				printf("Codigo: %d \n", pregunta.cod_pregunta);
+				printf("Enunciado = %.*s 	\n", pregunta.enunciado.len, pregunta.enunciado.arr);
+				printf("Número de exámenes en los que aparece: %d \n", pregunta.num_exams);
+
+				//Select sobre evalua
+				EXEC SQL DECLARE cursorevalua CURSOR FOR select * from Evalua e where e.Cod_Pregunta = :pregunta.cod_pregunta;
+				printf("Temas que evalua la pregunta seleccionada:\n");			
+				EXEC SQL CONNECT :oracleid;
+				if (sqlca.sqlcode != 0) //Conexión fallida
+				{
+					printf("Error, conexión fallida\n");
+					printf("Códigos de error de SQL: \n");
+					printf("%d\n", sqlca.sqlcode);
+					printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+					printf("Código de error -98\n");
+					printf("Saliendo del programa.\n");
+					return -98;
+				}
+				EXEC SQL OPEN cursorevalua;
+
+				EXEC SQL FETCH cursorevalua
+				INTO :evalua;
 				while (sqlca.sqlcode == 0)
 				{
 					printf("\n");
-					printf("Pregunta = %d 	\n", pregunta.cod_pregunta);
-					printf("Tema = %.*s 	\n", tema.titulo.len, tema.titulo.arr);
-					printf("Asignatura = %.*s 	\n", asignatura.nombre.len, asignatura.nombre.arr);
+					printf("Tema = %d\n", evalua.cod_tema);
 
-					printf("\n");
-
-					EXEC SQL FETCH cursormi
-				INTO :pregunta2.enunciado, :opcion2.texto, :opcion2.respuesta, :examen2.cod_examen;
+					EXEC SQL FETCH cursorevalua
+					INTO :evalua;
 				}
-				EXEC SQL CLOSE cursormi;
+				EXEC SQL CLOSE cursorevalua;
+				EXEC SQL COMMIT WORK RELEASE;
+
+				//Select sobre Compuesta_Por
+				EXEC SQL DECLARE cursorcompuestapor CURSOR FOR select * from Compuesta_Por cp where cp.Cod_Pregunta = :pregunta.cod_pregunta;
+				printf("Exámenes que incluyen la pregunta:\n");			
+				EXEC SQL CONNECT :oracleid;
+				if (sqlca.sqlcode != 0) //Conexión fallida
+				{
+					printf("Error, conexión fallida\n");
+					printf("Códigos de error de SQL: \n");
+					printf("%d\n", sqlca.sqlcode);
+					printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+					printf("Código de error -98\n");
+					printf("Saliendo del programa.\n");
+					return -98;
+				}
+				EXEC SQL OPEN cursorcompuestapor;
+
+				EXEC SQL FETCH cursorcompuestapor
+				INTO :compuesta_por;
+				while (sqlca.sqlcode == 0)
+				{
+					printf("\n");
+					printf("Exámen: %d\n", compuesta_por.cod_examen);
+					printf("Número de respuestas correctas: %d \n", compuesta_por.num_correctas);
+					printf("Número de respuestas incorrectas: %d\n", compuesta_por.num_incorrectas);
+					printf("Número de respuestas no sabe no contesta: %d\n", compuesta_por.num_nsnc);
+
+					EXEC SQL FETCH cursorcompuestapor
+					INTO :evalua;
+				}
+				EXEC SQL CLOSE cursorcompuestapor;
+				EXEC SQL COMMIT WORK RELEASE;
+
+			//Select sobre Opcion
+				EXEC SQL DECLARE cursoropcion CURSOR FOR select * from Opcion o where o.Cod_Pregunta = :pregunta.cod_pregunta;
+				printf("Opciones que contiene la pregunta:\n");			
+				EXEC SQL CONNECT :oracleid;
+				if (sqlca.sqlcode != 0) //Conexión fallida
+				{
+					printf("Error, conexión fallida\n");
+					printf("Códigos de error de SQL: \n");
+					printf("%d\n", sqlca.sqlcode);
+					printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+					printf("Código de error -98\n");
+					printf("Saliendo del programa.\n");
+					return -98;
+				}
+				EXEC SQL OPEN cursoropcion;
+
+				EXEC SQL FETCH cursoropcion
+				INTO :opcion;
+				while (sqlca.sqlcode == 0)
+				{
+					printf("\n");
+					printf("Opcion: %d\n", opcion.cod_opcion);
+					printf("Posición: %d \n", opcion.posicion_num);
+					printf("Texto: %.*s \n", opcion.texto.len, opcion.texto.arr);
+					printf("Respuesta: %.*s \n", opcion.respuesta.len, opcion.respuesta.arr);
+					printf("\n");
+					EXEC SQL FETCH cursoropcion
+					INTO :opcion;
+				}
+				EXEC SQL CLOSE cursoropcion;
 				EXEC SQL COMMIT WORK RELEASE;
 
 
-				/*
-
-				EXEC SQL CONNECT :oracleid;
-
-				EXEC SQL select * into pregunta2 from Pregunta where cod_pregunta = :CODIGOCONSULTA;
-				EXEC SQL select * into opcion2 from Opcion where cod_pregunta = :CODIGOCONSULTA;
-				EXEC SQL select * into compuesta_por2 from Compuesta_Por where cod_pregunta = :CODIGOCONSULTA;
-
-				
-				printf("\n");
-				printf("Pregunta = %d 	\n", pregunta2.cod_pregunta);
-				printf("Opcion = %d \n", opcion2.cod_pregunta);
-				printf("CP = %d \n", compuesta_por2.cod_pregunta);
-
-				EXEC SQL COMMIT WORK RELEASE;*/
-										
 			break;
 		case 4://FINISHED & CLEAN
 			printf("\n");
@@ -480,7 +555,7 @@ int main(void)
 			
 
 			break;
-		case 5://FINISHED (AUNQUE MODIFICANDO LA CONSULTA PODEMOS OBTENER MAS DATOS)
+		case 5://FINISHED & CLEAN
 			printf("\n");
 			printf("-LISTADO DE LOS TEMAS EN LA BASE DE DATOS- \n");
 			printf("\n");
@@ -629,7 +704,7 @@ int main(void)
 	return 0;
 }
 
-static int getLine (char *prmpt, char *buff, size_t sz) 
+static int getLine (char *prmpt, char *buff, size_t sz) //FUNCION UTILIZADA PARA ESCANEAR CARACTÉRES
 {
     int ch, extra;
 
