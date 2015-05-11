@@ -125,7 +125,12 @@ int main(void)
 		int MAXIMUM2;
 		int MAXIMUM3;
 		int CODIGOCONSULTA;
+		int CODIGOCONSULTA2;
 		int POSICION;
+
+		int PREGUNTITA;
+		int TEMITA;
+
 
 		char oracleid[]="/";
 		EXEC SQL END DECLARE SECTION;
@@ -133,6 +138,11 @@ int main(void)
 		//Cursores para SQL
 		EXEC SQL DECLARE micursor CURSOR FOR select p.Cod_Pregunta, t.Titulo, a.Nombre from Pregunta p, Tema t, Asignatura a, Formada_Por fp,  Evalua e where p.Cod_Pregunta = e.Cod_Pregunta and t.Cod_Tema = e.Cod_Tema and t.Cod_Tema = fp.Cod_Tema and a.Codigo = fp.Cod_Asign;;
 		EXEC SQL DECLARE jejecursor CURSOR FOR select * from Tema;
+
+		EXEC SQL DECLARE cursorcillo CURSOR FOR select Cod_Pregunta from Pregunta;
+		EXEC SQL DECLARE cursorcillo2 CURSOR FOR select Cod_Tema from Tema;
+
+
 
 	//Cuerpo de programa
  	printf("----------------------------------\n");
@@ -261,11 +271,8 @@ int main(void)
 				EXEC SQL COMMIT WORK RELEASE;
 			
 			
-			//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 			break;
 		case 3://FALTA LA CONSULTA
-			//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-			//Código para la tercera funcionalidad
 			fseek(stdin,0,SEEK_END); //Limpieza del buffer
 			printf("Consultar una pregunta a partir de su código: \n");
 			printf("Elige un código del 1 al ");
@@ -289,7 +296,6 @@ int main(void)
 			do
 			{
 				scanf("%d", &CODIGOCONSULTA);
-				//printf("%d\n", CODIGOCONSULTA);
 			}while(CODIGOCONSULTA > MAXIMUM);
 			//Consulta para la consulta (valga la redundancia)
 
@@ -338,8 +344,141 @@ int main(void)
 				EXEC SQL COMMIT WORK RELEASE;*/
 										
 			break;
-		case 4:
-			//Código para la primera funcionalidad
+		case 4://FINISHED & CLEAN
+			printf("\n");
+			printf("-ASIGNAR UNA PREGUNTA A UN TEMA DE UNA DETERMINADA ASIGNATURA-\n");
+			printf("\n");
+
+			printf("A continuación se muestra un listado de los códigos de las preguntas disponibles.\n");
+			EXEC SQL CONNECT :oracleid;
+			if (sqlca.sqlcode != 0) //Conexión fallida
+			{
+				printf("Error, conexión fallida\n");
+				printf("Códigos de error de SQL: \n");
+				printf("%d\n", sqlca.sqlcode);
+				printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+				printf("Código de error -98\n");
+				printf("Saliendo del programa.\n");
+				return -98;
+			}
+			EXEC SQL OPEN cursorcillo;
+
+			EXEC SQL FETCH cursorcillo
+			INTO :pregunta.cod_pregunta;
+			while (sqlca.sqlcode == 0)
+			{
+				printf("\n");
+				printf("Pregunta = %d 	\n", pregunta.cod_pregunta);
+
+				printf("\n");
+
+				EXEC SQL FETCH cursorcillo
+				INTO :pregunta.cod_pregunta;
+			}
+			EXEC SQL CLOSE cursorcillo;
+			EXEC SQL COMMIT WORK RELEASE;
+			
+			printf("A continuación se muestra la lista de temas\n");
+			EXEC SQL CONNECT :oracleid;
+			if (sqlca.sqlcode != 0) //Conexión fallida
+			{
+				printf("Error, conexión fallida\n");
+				printf("Códigos de error de SQL: \n");
+				printf("%d\n", sqlca.sqlcode);
+				printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+				printf("Código de error -98\n");
+				printf("Saliendo del programa.\n");
+				return -98;
+			}
+			EXEC SQL OPEN cursorcillo2;
+
+			EXEC SQL FETCH cursorcillo2
+			INTO :tema.cod_tema;
+			while (sqlca.sqlcode == 0)
+			{
+				printf("\n");
+				printf("Tema = %d 	\n", tema.cod_tema);
+				
+
+				printf("\n");
+
+				EXEC SQL FETCH cursorcillo2
+				INTO :tema.cod_tema;
+			}
+			EXEC SQL CLOSE cursorcillo2;
+			EXEC SQL COMMIT WORK RELEASE;
+
+			
+			CODIGOCONSULTA = -1;
+			//Consulta para hallar el max
+				EXEC SQL CONNECT :oracleid;
+				if (sqlca.sqlcode != 0) //Conexión fallida
+				{
+					printf("Error, conexión fallida\n");
+					printf("Códigos de error de SQL: \n");
+					printf("%d\n", sqlca.sqlcode);
+					printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+					printf("Código de error -98\n");
+					printf("Saliendo del programa.\n");
+					return -98;
+				}
+				EXEC SQL select max(Cod_Pregunta) into :MAXIMUM from pregunta;
+				
+				EXEC SQL COMMIT WORK RELEASE;
+
+			CODIGOCONSULTA2 = -1;
+			//Consulta para hallar el max
+				EXEC SQL CONNECT :oracleid;
+				if (sqlca.sqlcode != 0) //Conexión fallida
+				{
+					printf("Error, conexión fallida\n");
+					printf("Códigos de error de SQL: \n");
+					printf("%d\n", sqlca.sqlcode);
+					printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+					printf("Código de error -98\n");
+					printf("Saliendo del programa.\n");
+					return -98;
+				}
+				EXEC SQL select max(Cod_Tema) into :MAXIMUM2 from tema;
+				
+				EXEC SQL COMMIT WORK RELEASE;
+			do
+			{
+				printf("Elige un código de pregunta del 1 al ");
+				printf("%d\n", MAXIMUM);
+				fseek(stdin,0,SEEK_END); //Limpieza del buffer
+				scanf("%d", &PREGUNTITA);
+			}while (PREGUNTITA > MAXIMUM);
+			do
+			{
+				printf("Elige un código de tema del 1 al ");
+				printf("%d\n", MAXIMUM2);
+				fseek(stdin,0,SEEK_END); //Limpieza del buffer
+				scanf("%d", &TEMITA);
+			}while (TEMITA > MAXIMUM2);
+			
+
+			printf("Has seleccionado la pregunta %d y el tema %d\n", PREGUNTITA, TEMITA);
+			
+			fseek(stdin,0,SEEK_END); //Limpieza del buffer
+				EXEC SQL CONNECT :oracleid;
+				if (sqlca.sqlcode != 0) //Conexión fallida
+				{
+					printf("Error, conexión fallida\n");
+					printf("Códigos de error de SQL: \n");
+					printf("%d\n", sqlca.sqlcode);
+					printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+					printf("Código de error -98\n");
+					printf("Saliendo del programa.\n");
+					return -98;
+				}
+				
+				EXEC SQL insert into evalua values (:TEMITA, :PREGUNTITA);
+				printf("Inserción realizada con éxito\n");
+
+				EXEC SQL COMMIT WORK RELEASE;
+			
+
 			break;
 		case 5://FINISHED (AUNQUE MODIFICANDO LA CONSULTA PODEMOS OBTENER MAS DATOS)
 			printf("\n");
