@@ -168,7 +168,7 @@ int main(void)
 	printf("	7 -> Consultar diccionario de datos.\n");
 	printf("\n");
 
-	while(option!=1 && option!=2 && option!=3 && option!=4 && option!=5 && option!=6)
+	while(option!=1 && option!=2 && option!=3 && option!=4 && option!=5 && option!=6 && option!=7)
 	{
 		fseek(stdin,0,SEEK_END); //Limpieza del buffer
 		printf("Introduce una opción válida: \n");
@@ -424,67 +424,6 @@ int main(void)
 			printf("-ASIGNAR UNA PREGUNTA A UN TEMA DE UNA DETERMINADA ASIGNATURA-\n");
 			printf("\n");
 
-			printf("A continuación se muestra un listado de los códigos de las preguntas disponibles.\n");
-			EXEC SQL CONNECT :oracleid;
-			if (sqlca.sqlcode != 0) //Conexión fallida
-			{
-				printf("Error, conexión fallida\n");
-				printf("Códigos de error de SQL: \n");
-				printf("%d\n", sqlca.sqlcode);
-				printf("%s\n", sqlca.sqlerrm.sqlerrmc);
-				printf("Código de error -98\n");
-				printf("Saliendo del programa.\n");
-				return -98;
-			}
-			EXEC SQL OPEN cursorcillo;
-
-			EXEC SQL FETCH cursorcillo
-			INTO :pregunta.cod_pregunta;
-			while (sqlca.sqlcode == 0)
-			{
-				printf("\n");
-				printf("Pregunta = %d 	\n", pregunta.cod_pregunta);
-
-				printf("\n");
-
-				EXEC SQL FETCH cursorcillo
-				INTO :pregunta.cod_pregunta;
-			}
-			EXEC SQL CLOSE cursorcillo;
-			EXEC SQL COMMIT WORK RELEASE;
-			
-			printf("A continuación se muestra la lista de temas\n");
-			EXEC SQL CONNECT :oracleid;
-			if (sqlca.sqlcode != 0) //Conexión fallida
-			{
-				printf("Error, conexión fallida\n");
-				printf("Códigos de error de SQL: \n");
-				printf("%d\n", sqlca.sqlcode);
-				printf("%s\n", sqlca.sqlerrm.sqlerrmc);
-				printf("Código de error -98\n");
-				printf("Saliendo del programa.\n");
-				return -98;
-			}
-			EXEC SQL OPEN cursorcillo2;
-
-			EXEC SQL FETCH cursorcillo2
-			INTO :tema.cod_tema;
-			while (sqlca.sqlcode == 0)
-			{
-				printf("\n");
-				printf("Tema = %d 	\n", tema.cod_tema);
-				
-
-				printf("\n");
-
-				EXEC SQL FETCH cursorcillo2
-				INTO :tema.cod_tema;
-			}
-			EXEC SQL CLOSE cursorcillo2;
-			EXEC SQL COMMIT WORK RELEASE;
-
-			
-			CODIGOCONSULTA = -1;
 			//Consulta para hallar el max
 				EXEC SQL CONNECT :oracleid;
 				if (sqlca.sqlcode != 0) //Conexión fallida
@@ -517,17 +456,80 @@ int main(void)
 				EXEC SQL select max(Cod_Tema) into :MAXIMUM2 from tema;
 				
 				EXEC SQL COMMIT WORK RELEASE;
+
+			printf("A continuación se muestra un listado de los códigos de las preguntas disponibles.\n");
+			EXEC SQL CONNECT :oracleid;
+			if (sqlca.sqlcode != 0) //Conexión fallida
+			{
+				printf("Error, conexión fallida\n");
+				printf("Códigos de error de SQL: \n");
+				printf("%d\n", sqlca.sqlcode);
+				printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+				printf("Código de error -98\n");
+				printf("Saliendo del programa.\n");
+				return -98;
+			}
+			EXEC SQL OPEN cursorcillo;
+
+			EXEC SQL FETCH cursorcillo
+			INTO :pregunta.cod_pregunta;
+			while (sqlca.sqlcode == 0)
+			{
+				printf("\n");
+				printf("Pregunta = %d 	\n", pregunta.cod_pregunta);
+
+				printf("\n");
+
+				EXEC SQL FETCH cursorcillo
+				INTO :pregunta.cod_pregunta;
+			}
+			EXEC SQL CLOSE cursorcillo;
+			EXEC SQL COMMIT WORK RELEASE;
+
 			do
 			{
-				printf("Elige un código de pregunta del 1 al ");
+				printf("Elige un código de pregunta comprendido entre 1 y ");
 				printf("%d\n", MAXIMUM);
+				printf("Y que se muestre en el listado superior.\n");
 				fseek(stdin,0,SEEK_END); //Limpieza del buffer
 				scanf("%d", &PREGUNTITA);
 			}while (PREGUNTITA > MAXIMUM);
+			
+			
+			printf("A continuación se muestra la lista de temas\n");
+			EXEC SQL CONNECT :oracleid;
+			if (sqlca.sqlcode != 0) //Conexión fallida
+			{
+				printf("Error, conexión fallida\n");
+				printf("Códigos de error de SQL: \n");
+				printf("%d\n", sqlca.sqlcode);
+				printf("%s\n", sqlca.sqlerrm.sqlerrmc);
+				printf("Código de error -98\n");
+				printf("Saliendo del programa.\n");
+				return -98;
+			}
+			EXEC SQL OPEN cursorcillo2;
+
+			EXEC SQL FETCH cursorcillo2
+			INTO :tema.cod_tema;
+			while (sqlca.sqlcode == 0)
+			{
+				printf("\n");
+				printf("Tema = %d 	\n", tema.cod_tema);
+				
+
+				printf("\n");
+
+				EXEC SQL FETCH cursorcillo2
+				INTO :tema.cod_tema;
+			}
+			EXEC SQL CLOSE cursorcillo2;
+			EXEC SQL COMMIT WORK RELEASE;
 			do
 			{
-				printf("Elige un código de tema del 1 al ");
+				printf("Elige un código de tema comprendido entre 1 y ");
 				printf("%d\n", MAXIMUM2);
+				printf("Y que se muestre en el listado superior.\n");
 				fseek(stdin,0,SEEK_END); //Limpieza del buffer
 				scanf("%d", &TEMITA);
 			}while (TEMITA > MAXIMUM2);
@@ -690,7 +692,7 @@ int main(void)
 		case 7:
 			printf("Diccionario de fallos\n");
 			printf("	-1 = Enunciado no introducido\n");
-			printf("    -2 = Enunciado demasiado largo\n");
+			printf("	-2 = Enunciado demasiado largo\n");
 			printf("	-3 = Enunciado vacío\n");
 			printf("\n");
 			printf("	-98 = Error de conexión SQL\n");
